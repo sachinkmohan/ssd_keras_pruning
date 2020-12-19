@@ -2,8 +2,9 @@
 ---
 ## Applying Pruning to this repository 
 
-
-
+### Changes
+1. Changed keras to tensorflow.keras in models/keras_ssd7.py
+2. Few changes in keras_layer_AnchorBoxes.py
 
 
 
