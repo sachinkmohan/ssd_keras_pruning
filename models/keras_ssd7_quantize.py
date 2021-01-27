@@ -23,12 +23,24 @@ from tensorflow.keras.layers import Input, Lambda, Conv2D, MaxPooling2D, BatchNo
 from tensorflow.keras.regularizers import l2
 import tensorflow.keras.backend as K
 
-from keras_layers.keras_layer_AnchorBoxes import AnchorBoxes
+from keras_layers.keras_layer_AnchorBoxes_1 import AnchorBoxes
+from keras_layers.keras_layer_AnchorBoxes_1 import DefaultDenseQuantizeConfig
 from keras_layers.keras_layer_DecodeDetections import DecodeDetections
 from keras_layers.keras_layer_DecodeDetectionsFast import DecodeDetectionsFast
 
 import tensorflow as tf
 import tensorflow_model_optimization as tfmot
+
+quantize_annotate_layer = tfmot.quantization.keras.quantize_annotate_layer
+quantize_annotate_model = tfmot.quantization.keras.quantize_annotate_model
+quantize_scope = tfmot.quantization.keras.quantize_scope
+
+import numpy as np
+import tensorflow.keras.backend as K
+from tensorflow.keras.layers import InputSpec
+from tensorflow.keras.layers import Layer
+
+from bounding_box_utils.bounding_box_utils import convert_coordinates
 
 def build_model_quantize(image_size,
                 n_classes,
@@ -277,48 +289,48 @@ def build_model_quantize(image_size,
     if swap_channels:
         x1 = Lambda(input_channel_swap, output_shape=(img_height, img_width, img_channels), name='input_channel_swap')(x1)
     
-    conv1 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(32, (5, 5), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv1'))(x1) # adding quantising code to this conv1 layer
+#    conv1 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(32, (5, 5), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv1'))(x1) # adding quantising code to this conv1 layer
     
     
 #    conv1 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Dense(10))(i) #sample quantization code
 
-#    conv1 = Conv2D(32, (5, 5), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv1')(x1) #commented to test conv1 code above
+    conv1 = Conv2D(32, (5, 5), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv1')(x1) #commented to test conv1 code above
     conv1 = BatchNormalization(axis=3, momentum=0.99, name='bn1')(conv1) # Tensorflow uses filter format [filter_height, filter_width, in_channels, out_channels], hence axis = 3
     conv1 = ELU(name='elu1')(conv1)
     pool1 = MaxPooling2D(pool_size=(2, 2), name='pool1')(conv1)
     
-    conv2 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv2'))(pool1)
-    #conv2 = Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv2')(pool1)
+#    conv2 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv2'))(pool1)
+    conv2 = Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv2')(pool1)
     conv2 = BatchNormalization(axis=3, momentum=0.99, name='bn2')(conv2)
     conv2 = ELU(name='elu2')(conv2)
     pool2 = MaxPooling2D(pool_size=(2, 2), name='pool2')(conv2)
     
-    conv3 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv3'))(pool2)
-    #conv3 = Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv3')(pool2)
+    #conv3 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv3'))(pool2)
+    conv3 = Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv3')(pool2)
     conv3 = BatchNormalization(axis=3, momentum=0.99, name='bn3')(conv3)
     conv3 = ELU(name='elu3')(conv3)
     pool3 = MaxPooling2D(pool_size=(2, 2), name='pool3')(conv3)
     
-    conv4 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv4'))(pool3)
-    #conv4 = Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv4')(pool3)
+    #conv4 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv4'))(pool3)
+    conv4 = Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv4')(pool3)
     conv4 = BatchNormalization(axis=3, momentum=0.99, name='bn4')(conv4)
     conv4 = ELU(name='elu4')(conv4)
     pool4 = MaxPooling2D(pool_size=(2, 2), name='pool4')(conv4)
     
-    conv5 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv5'))(pool4)
-    #conv5 = Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv5')(pool4)
+    #conv5 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv5'))(pool4)
+    conv5 = Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv5')(pool4)
     conv5 = BatchNormalization(axis=3, momentum=0.99, name='bn5')(conv5)
     conv5 = ELU(name='elu5')(conv5)
     pool5 = MaxPooling2D(pool_size=(2, 2), name='pool5')(conv5)
     
-    conv6 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv6'))(pool5)
-    #conv6 = Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv6')(pool5)
+    #conv6 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv6'))(pool5)
+    conv6 = Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv6')(pool5)
     conv6 = BatchNormalization(axis=3, momentum=0.99, name='bn6')(conv6)
     conv6 = ELU(name='elu6')(conv6)
     pool6 = MaxPooling2D(pool_size=(2, 2), name='pool6')(conv6)
     
-    conv7 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(32, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv7'))(pool6)
-    #conv7 = Conv2D(32, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv7')(pool6)
+    #conv7 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Conv2D(32, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv7'))(pool6)
+    conv7 = Conv2D(32, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv7')(pool6)
     conv7 = BatchNormalization(axis=3, momentum=0.99, name='bn7')(conv7)
     conv7 = ELU(name='elu7')(conv7)
 
@@ -353,9 +365,9 @@ def build_model_quantize(image_size,
                            two_boxes_for_ar1=two_boxes_for_ar1, this_steps=steps[0], this_offsets=offsets[0],
                            clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors4')(boxes4)
     '''
-    anchors4 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.AnchorBoxes(img_height, img_width, this_scale=scales[0], next_scale=scales[1], aspect_ratios=aspect_ratios[0],
+    anchors4 = tfmot.quantization.keras.quantize_annotate_layer(AnchorBoxes(img_height, img_width, this_scale=scales[0], next_scale=scales[1], aspect_ratios=aspect_ratios[0],
                            two_boxes_for_ar1=two_boxes_for_ar1, this_steps=steps[0], this_offsets=offsets[0],
-                           clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors4'))(boxes4)
+                           clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors4'), DefaultDenseQuantizeConfig())(boxes4)
     
     '''
     anchors5 = AnchorBoxes(img_height, img_width, this_scale=scales[1], next_scale=scales[2], aspect_ratios=aspect_ratios[1],
@@ -366,17 +378,17 @@ def build_model_quantize(image_size,
     
     anchors5 = tfmot.quantization.keras.quantize_annotate_layer(AnchorBoxes(img_height, img_width, this_scale=scales[1], next_scale=scales[2], aspect_ratios=aspect_ratios[1],
                            two_boxes_for_ar1=two_boxes_for_ar1, this_steps=steps[1], this_offsets=offsets[1],
-                           clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors5'))(boxes5)
+                           clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors5'), DefaultDenseQuantizeConfig())(boxes5)
     
     '''
     anchors6 = AnchorBoxes(img_height, img_width, this_scale=scales[2], next_scale=scales[3], aspect_ratios=aspect_ratios[2],
                            two_boxes_for_ar1=two_boxes_for_ar1, this_steps=steps[2], this_offsets=offsets[2],
                            clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors6')(boxes6)
-    '''
     
-    anchors6 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.AnchorBoxes(img_height, img_width, this_scale=scales[2], next_scale=scales[3], aspect_ratios=aspect_ratios[2],
+    '''
+    anchors6 = tfmot.quantization.keras.quantize_annotate_layer(AnchorBoxes(img_height, img_width, this_scale=scales[2], next_scale=scales[3], aspect_ratios=aspect_ratios[2],
                            two_boxes_for_ar1=two_boxes_for_ar1, this_steps=steps[2], this_offsets=offsets[2],
-                           clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors6'))(boxes6)
+                           clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors6'), DefaultDenseQuantizeConfig())(boxes6)
     
     '''
     anchors7 = AnchorBoxes(img_height, img_width, this_scale=scales[3], next_scale=scales[4], aspect_ratios=aspect_ratios[3],
@@ -384,9 +396,9 @@ def build_model_quantize(image_size,
                            clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors7')(boxes7)
     '''
     
-    anchors7 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.AnchorBoxes(img_height, img_width, this_scale=scales[3], next_scale=scales[4], aspect_ratios=aspect_ratios[3],
+    anchors7 = tfmot.quantization.keras.quantize_annotate_layer(AnchorBoxes(img_height, img_width, this_scale=scales[3], next_scale=scales[4], aspect_ratios=aspect_ratios[3],
                            two_boxes_for_ar1=two_boxes_for_ar1, this_steps=steps[3], this_offsets=offsets[3],
-                           clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors7'))(boxes7)
+                           clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors7'), DefaultDenseQuantizeConfig())(boxes7)
 
     # Reshape the class predictions, yielding 3D tensors of shape `(batch, height * width * n_boxes, n_classes)`
     # We want the classes isolated in the last axis to perform softmax on them
@@ -436,8 +448,17 @@ def build_model_quantize(image_size,
     predictions = Concatenate(axis=2, name='predictions')([classes_softmax, boxes_concat, anchors_concat])
 
     if mode == 'training':
-        annotated_model = Model(inputs=x, outputs=predictions)
-        model = tfmot.quantization.keras.quantize_apply(annotated_model)  # Added as part of quantization
+        #annotated_model = Model(inputs=x, outputs=predictions)
+        base_model = Model(inputs=x, outputs=predictions)
+        
+        with quantize_scope(
+          {'DefaultDenseQuantizeConfig': DefaultDenseQuantizeConfig,
+           'AnchorBoxes': AnchorBoxes}):
+          # Use `quantize_apply` to actually make the model quantization aware.
+          model = tfmot.quantization.keras.quantize_model(base_model)
+          #quant_aware_model = tfmot.quantization.keras.quantize_apply(model)
+          #q_model = tfmot.quantization.keras.quantize_apply(model)  # Added as part of quantization
+           #pass
     elif mode == 'inference':
         decoded_predictions = DecodeDetections(confidence_thresh=confidence_thresh,
                                                iou_threshold=iou_threshold,
