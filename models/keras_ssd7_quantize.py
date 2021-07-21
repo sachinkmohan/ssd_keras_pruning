@@ -42,6 +42,35 @@ from tensorflow.keras.layers import Layer
 
 from bounding_box_utils.bounding_box_utils import convert_coordinates
 
+LastValueQuantizer = tfmot.quantization.keras.quantizers.LastValueQuantizer
+MovingAverageQuantizer = tfmot.quantization.keras.quantizers.MovingAverageQuantizer
+
+class DefaultDenseQuantizeConfig(tfmot.quantization.keras.QuantizeConfig):
+    # Configure how to quantize weights.
+    def get_weights_and_quantizers(self, layer):
+      return [(layer.kernel, LastValueQuantizer(num_bits=8, symmetric=True, narrow_range=False, per_axis=False))]
+
+    # Configure how to quantize activations.
+    def get_activations_and_quantizers(self, layer):
+      return [(layer.activation, MovingAverageQuantizer(num_bits=8, symmetric=False, narrow_range=False, per_axis=False))]
+
+    def set_quantize_weights(self, layer, quantize_weights):
+      # Add this line for each item returned in `get_weights_and_quantizers`
+      # , in the same order
+      layer.kernel = quantize_weights[0]
+
+    def set_quantize_activations(self, layer, quantize_activations):
+      # Add this line for each item returned in `get_activations_and_quantizers`
+      # , in the same order.
+      layer.activation = quantize_activations[0]
+
+    # Configure how to quantize outputs (may be equivalent to activations).
+    def get_output_quantizers(self, layer):
+      return []
+
+    def get_config(self):
+      return {}
+
 def build_model_quantize(image_size,
                 n_classes,
                 mode='training',
@@ -281,7 +310,9 @@ def build_model_quantize(image_size,
     x = Input(shape=(img_height, img_width, img_channels))
 
     # The following identity layer is only needed so that the subsequent lambda layers can be optional.
-    x1 = Lambda(identity_layer, output_shape=(img_height, img_width, img_channels), name='identity_layer')(x)
+    #x1 = Lambda(identity_layer, output_shape=(img_height, img_width, img_channels), name='identity_layer')(x)
+    x1 = tfmot.quantization.keras.quantize_annotate_layer(Lambda(identity_layer, output_shape=(img_height, img_width, img_channels), name='identity_layer'))(x)
+    
     if not (subtract_mean is None):
         x1 = Lambda(input_mean_normalization, output_shape=(img_height, img_width, img_channels), name='input_mean_normalization')(x1)
     if not (divide_by_stddev is None):
@@ -360,7 +391,6 @@ def build_model_quantize(image_size,
     # Output shape of `anchors`: `(batch, height, width, n_boxes, 8)`
     
     #conv1 = tfmot.quantization.keras.quantize_annotate_layer(tf.keras.layers.Dense(10))(i)
-    '''
     anchors4 = AnchorBoxes(img_height, img_width, this_scale=scales[0], next_scale=scales[1], aspect_ratios=aspect_ratios[0],
                            two_boxes_for_ar1=two_boxes_for_ar1, this_steps=steps[0], this_offsets=offsets[0],
                            clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors4')(boxes4)
@@ -400,6 +430,7 @@ def build_model_quantize(image_size,
                            two_boxes_for_ar1=two_boxes_for_ar1, this_steps=steps[3], this_offsets=offsets[3],
                            clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors7'), DefaultDenseQuantizeConfig())(boxes7)
 
+    '''
     # Reshape the class predictions, yielding 3D tensors of shape `(batch, height * width * n_boxes, n_classes)`
     # We want the classes isolated in the last axis to perform softmax on them
     classes4_reshaped = Reshape((-1, n_classes), name='classes4_reshape')(classes4)
@@ -441,8 +472,10 @@ def build_model_quantize(image_size,
 
     # The box coordinate predictions will go into the loss function just the way they are,
     # but for the class predictions, we'll apply a softmax activation layer first
-    classes_softmax = Activation('softmax', name='classes_softmax')(classes_concat)
-
+    
+    #classes_softmax = Activation('softmax', name='classes_softmax')(classes_concat)
+    classes_softmax = tfmot.quantization.keras.quantize_annotate_layer(Activation('softmax', name='classes_softmax'), DefaultDenseQuantizeConfig())(classes_concat)
+    
     # Concatenate the class and box coordinate predictions and the anchors to one large predictions tensor
     # Output shape of `predictions`: (batch, n_boxes_total, n_classes + 4 + 8)
     predictions = Concatenate(axis=2, name='predictions')([classes_softmax, boxes_concat, anchors_concat])
@@ -456,9 +489,7 @@ def build_model_quantize(image_size,
            'AnchorBoxes': AnchorBoxes}):
           # Use `quantize_apply` to actually make the model quantization aware.
           model = tfmot.quantization.keras.quantize_model(base_model)
-          #quant_aware_model = tfmot.quantization.keras.quantize_apply(model)
-          #q_model = tfmot.quantization.keras.quantize_apply(model)  # Added as part of quantization
-           #pass
+        
     elif mode == 'inference':
         decoded_predictions = DecodeDetections(confidence_thresh=confidence_thresh,
                                                iou_threshold=iou_threshold,

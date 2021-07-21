@@ -834,6 +834,7 @@ class Evaluator:
             average_precision = 0.0
 
             if mode == 'sample':
+                print('printing recall points -> ', num_recall_points)
 
                 for t in np.linspace(start=0, stop=1, num=num_recall_points, endpoint=True):
 
