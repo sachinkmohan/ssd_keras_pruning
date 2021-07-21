@@ -103,3 +103,6 @@ local*
 # Ignore folders
 saved_models/
 saved_logs/
+pruning_summaries/
+model/
+logs_tboard/
