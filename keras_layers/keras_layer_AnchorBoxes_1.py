@@ -285,7 +285,7 @@ MovingAverageQuantizer = tfmot.quantization.keras.quantizers.MovingAverageQuanti
 class DefaultDenseQuantizeConfig(tfmot.quantization.keras.QuantizeConfig):
     # Configure how to quantize weights.
     def get_weights_and_quantizers(self, layer):
-      return [(layer.kernel, LastValueQuantizer(num_bits=8, symmetric=True, narrow_range=False, per_axis=False))]
+      return [(layer.kernel, LastValueQuantizer(num_bits=4, symmetric=True, narrow_range=False, per_axis=False))]
 
     # Configure how to quantize activations.
     def get_activations_and_quantizers(self, layer):
