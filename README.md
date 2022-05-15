@@ -1,19 +1,20 @@
 ## SSD: Single-Shot MultiBox Detector implementation in Keras
 ---
-## Applying Pruning to this repository 
-
-| Changes      | Date |
-| ----------- | ----------- |
-| Added Inference on Jetson board      | 17th Jan 2022       |
-| x   | x        |
-
-### Changes
-1. Changed keras to tensorflow.keras in models/keras_ssd7.py
-2. Few changes in keras_layer_AnchorBoxes.py
-3. Added onnx inference in `ssd7_onnx_inference.py`
 
 
+### Changes done by me in this modified repository
+- Added pruning and quantization from the tensorflow model optimization library.  
+- Changed keras to tensorflow.keras in models/keras_ssd7.py
+- Few changes in keras_layer_AnchorBoxes.py
+- Added onnx inference in `ssd7_onnx_inference.py`
+- Normal inference on an image or video can be done using `ssd7_img_video_inference.py`
+	- It displays fps on the image
+	- gpu memory fraction set to 0.004 and still it works!! 
+	- An average fps of 76 fps is achieved on GPU - Nvidia GeForce GTX 1080 Ti - 11GB
 
+---
+
+## Original README by the author @pierluigiferrari
 ### Contents
 
 1. [Overview](#overview)
