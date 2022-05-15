@@ -47,15 +47,22 @@ import tensorflow_model_optimization as tfmot
 import numpy as np
 import cv2
 from keras.preprocessing import image
+
+import time
 prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
 
 
-
+'''
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
-print(physical_devices)
+#print(physical_devices)
 if physical_devices:
   tf.config.experimental.set_memory_growth(physical_devices[0], True)
+'''
+from keras.backend.tensorflow_backend import set_session
 
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.004
+set_session(tf.Session(config=config))
 
 # ## 1. Set the model configuration parameters
 
@@ -164,8 +171,11 @@ def inference_video():
     #Reading a dummy image
 
     cap = cv2.VideoCapture('/home/mohan/git/backups/drive.mp4')
+    prev_frame_time = 0
+    new_frame_time = 0
 
     while cap.isOpened():
+        new_frame_time = time.time()
         ret, frame = cap.read()
         resized = cv2.resize(frame, (480, 300))
         #im2 = image.img_to_array(im2)
@@ -188,6 +198,16 @@ def inference_video():
 
         np.set_printoptions(precision=2, suppress=True, linewidth=90)
 
+        fps = 1 / (new_frame_time - prev_frame_time)
+        prev_frame_time = new_frame_time
+
+        # converting the fps into integer
+        fps = int(fps)
+
+        # converting the fps to string so that we can display it on frame
+        # by using putText function
+        fps = str(fps)
+
         ## Drawing a bounding box around the predictions
         for box in y_pred_decoded[0]:
             xmin = box[-4]
@@ -199,6 +219,8 @@ def inference_video():
             #cv2.rectangle(im2, (xmin,ymin),(xmax,ymax), color=color, thickness=2 )
             cv2.rectangle(resized, (int(xmin),int(ymin)),(int(xmax),int(ymax)), color=(0,255,0), thickness=2 )
             cv2.putText(resized, label, (int(xmin), int(ymin)), font, fontScale, color, thickness)
+            cv2.putText(resized, fps, (7, 70), font, 3, (100, 255, 0), 3, cv2.LINE_AA)
+            print(fps)
         cv2.imshow('im', resized)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
