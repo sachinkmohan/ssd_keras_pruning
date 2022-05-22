@@ -6,12 +6,15 @@
 - Added pruning and quantization from the tensorflow model optimization library.  
 - Changed keras to tensorflow.keras in models/keras_ssd7.py
 - Few changes in keras_layer_AnchorBoxes.py
-- Added onnx inference in `ssd7_onnx_inference.py`
+- Added onnx inference for both image and video in `ssd7_onnx_inference.py`
 - Normal inference on an image or video can be done using `ssd7_img_video_inference.py`
 	- It displays fps on the image
 	- gpu memory fraction set to 0.004 and still it works!! 
 	- An average fps of 76 fps is achieved on GPU - Nvidia GeForce GTX 1080 Ti - 11GB
-
+- Added `drive_1_min_more_cars.mp4` for the inference in the `custom_files`
+- `custom files folder contents`
+	- `ssd7_30_ep_op13.onnx`
+	- `drive_1_min_more_cars.mp4`
 ---
 
 ## Original README by the author @pierluigiferrari
