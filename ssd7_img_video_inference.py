@@ -23,12 +23,12 @@ from matplotlib import pyplot as plt
 
 from models.keras_ssd7 import build_model
 #from models.keras_ssd7_quantize import build_model_quantize
-from models.keras_ssd7_quantize2 import build_model_quantize2
+#from models.keras_ssd7_quantize2 import build_model_quantize2
 #from keras_loss_function.keras_ssd_loss import SSDLoss  #commented to test TF2.0
 from keras_loss_function.keras_ssd_loss_tf2 import SSDLoss # added for TF2.0
 
 from keras_layers.keras_layer_AnchorBoxes import AnchorBoxes
-from keras_layers.keras_layer_AnchorBoxes_1 import DefaultDenseQuantizeConfig
+#from keras_layers.keras_layer_AnchorBoxes_1 import DefaultDenseQuantizeConfig
 from keras_layers.keras_layer_DecodeDetections import DecodeDetections
 from keras_layers.keras_layer_DecodeDetectionsFast import DecodeDetectionsFast
 
@@ -42,14 +42,14 @@ from data_generator.data_augmentation_chain_constant_input_size import DataAugme
 from data_generator.data_augmentation_chain_original_ssd import SSDDataAugmentation
 
 ## imports used for pruning
-import tensorflow_model_optimization as tfmot
+#import tensorflow_model_optimization as tfmot
 
 import numpy as np
 import cv2
-from keras.preprocessing import image
+from tensorflow.keras.preprocessing import image
 
 import time
-prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
+#prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
 
 
 '''
@@ -58,10 +58,12 @@ physical_devices = tf.config.experimental.list_physical_devices('GPU')
 if physical_devices:
   tf.config.experimental.set_memory_growth(physical_devices[0], True)
 '''
-from keras.backend.tensorflow_backend import set_session
+#from tensorflow.python.keras.backend.tensorflow_backend import set_session
+from tensorflow.python.keras.backend import set_session
 
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.004
+#config.gpu_options.per_process_gpu_memory_fraction = 0.004
+config.gpu_options.per_process_gpu_memory_fraction = 0.5
 set_session(tf.Session(config=config))
 
 # ## 1. Set the model configuration parameters
@@ -170,7 +172,7 @@ def inference_single_image():
 def inference_video():
     #Reading a dummy image
 
-    cap = cv2.VideoCapture('/home/mohan/git/backups/drive.mp4')
+    cap = cv2.VideoCapture('/home/agrosy/git/drive.mp4')
     prev_frame_time = 0
     new_frame_time = 0
 
@@ -221,10 +223,10 @@ def inference_video():
             cv2.putText(resized, label, (int(xmin), int(ymin)), font, fontScale, color, thickness)
             cv2.putText(resized, fps, (7, 70), font, 3, (100, 255, 0), 3, cv2.LINE_AA)
             print(fps)
-        cv2.imshow('im', resized)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            cv2.destroyAllWindows()
-            break
+        #cv2.imshow('im', resized)
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+        #    cv2.destroyAllWindows()
+        #    break
 
 def main():
     #inference_single_image() # Uncomment any one of them based on your needs

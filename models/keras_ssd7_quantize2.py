@@ -28,7 +28,7 @@ from keras_layers.keras_layer_DecodeDetections import DecodeDetections
 from keras_layers.keras_layer_DecodeDetectionsFast import DecodeDetectionsFast
 
 import tensorflow as tf
-import tensorflow_model_optimization as tfmot
+#import tensorflow_model_optimization as tfmot
 
 quantize_annotate_layer = tfmot.quantization.keras.quantize_annotate_layer
 quantize_annotate_model = tfmot.quantization.keras.quantize_annotate_model

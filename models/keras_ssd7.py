@@ -28,7 +28,7 @@ from keras_layers.keras_layer_DecodeDetections import DecodeDetections
 from keras_layers.keras_layer_DecodeDetectionsFast import DecodeDetectionsFast
 
 import tensorflow as tf
-import tensorflow_model_optimization as tfmot
+#import tensorflow_model_optimization as tfmot
 
 def build_model(image_size,
                 n_classes,
