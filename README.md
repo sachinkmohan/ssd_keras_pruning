@@ -11,7 +11,7 @@
 	- It displays fps on the image
 	- gpu memory fraction set to 0.004 and still it works!! 
 	- An average fps of 76 fps is achieved on GPU - Nvidia GeForce GTX 1080 Ti - 11GB
-
+- Video for inference can be downloaded using `wget https://www.dropbox.com/s/iscr4hmtyn99uva/drive_1_min_more_cars.mp4`
 ---
 
 ## Original README by the author @pierluigiferrari
