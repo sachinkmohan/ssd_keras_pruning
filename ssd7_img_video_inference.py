@@ -42,7 +42,7 @@ from data_generator.data_augmentation_chain_constant_input_size import DataAugme
 from data_generator.data_augmentation_chain_original_ssd import SSDDataAugmentation
 
 ## imports used for pruning
-#import tensorflow_model_optimization as tfmot
+import tensorflow_model_optimization as tfmot
 
 import numpy as np
 import cv2
@@ -63,7 +63,7 @@ from tensorflow.python.keras.backend import set_session
 
 config = tf.ConfigProto()
 #config.gpu_options.per_process_gpu_memory_fraction = 0.004
-config.gpu_options.per_process_gpu_memory_fraction = 0.5
+config.gpu_options.per_process_gpu_memory_fraction = 0.03
 set_session(tf.Session(config=config))
 
 # ## 1. Set the model configuration parameters
@@ -95,16 +95,30 @@ color = (255, 255, 0)
 
 # Line thickness of 2 px
 thickness = 1
+# for base inference
 model_path = './saved_models/ssd7_base_epoch-30_loss-2.0457_val_loss-2.2370.h5'
+
+# loading the pruned model from p_model_path
+
+#p_model_path = './jetson_custom_files/striped_pruned_polynomial_20to80p_from_base_model_2202.h5'
+
+q_model_path = './jetson_custom_files/ssd7_base_quant_epoch-26_loss-1.9452_val_loss-2.1168.h5'
+
+quantize_scope = tfmot.quantization.keras.quantize_scope
+
+
+
 
 adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0)
 
 #K.clear_session() # Clear previous models from memory.
 
-model = load_model(model_path, custom_objects={'AnchorBoxes': AnchorBoxes,
-                                               'compute_loss': ssd_loss.compute_loss})
+#model = load_model(model_path, custom_objects={'AnchorBoxes': AnchorBoxes, 'compute_loss': ssd_loss.compute_loss})
 
+# Loading the quantized model
+with quantize_scope():
+    quantized_model = tf.keras.models.load_model(q_model_path, custom_objects={'AnchorBoxes': AnchorBoxes, 'compute_loss': ssd_loss.compute_loss})
 
 def inference_single_image():
     #Reading a dummy image
@@ -172,7 +186,7 @@ def inference_single_image():
 def inference_video():
     #Reading a dummy image
 
-    cap = cv2.VideoCapture('/home/agrosy/git/drive.mp4')
+    cap = cv2.VideoCapture('./jetson_custom_files/drive_1_min_more_cars.mp4')
     prev_frame_time = 0
     new_frame_time = 0
 
@@ -186,7 +200,7 @@ def inference_video():
         im3 = np.expand_dims(resized, axis=0)
 
         # Make a prediction
-        y_pred = model.predict(im3)
+        y_pred = quantized_model.predict(im3)
 
         # 4: Decode the raw prediction `y_pred`
 
