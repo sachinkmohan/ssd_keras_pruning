@@ -15,6 +15,7 @@
 - `custom files folder contents`
 	- `ssd7_30_ep_op13.onnx`
 	- `drive_1_min_more_cars.mp4`
+- Adding a conda environment file `ssd7_keras.yml` which is like `requirements.txt` in pip
 ---
 
 ## Original README by the author @pierluigiferrari
