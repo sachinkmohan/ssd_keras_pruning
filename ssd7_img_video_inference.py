@@ -94,6 +94,9 @@ color = (255, 255, 0)
 # Line thickness of 2 px
 thickness = 1
 model_path = './saved_models/ssd7_base_epoch-30_loss-2.0457_val_loss-2.2370.h5'
+#p_model_path = './saved_models/striped_pruned_polynomial_20to80p_from_base_model_2202.h5'
+#q_model_path = './saved_models/ssd7_base_quant_epoch-26_loss-1.9452_val_loss-2.1168.h5'
+
 
 adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0)
@@ -103,6 +106,11 @@ ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0)
 model = load_model(model_path, custom_objects={'AnchorBoxes': AnchorBoxes,
                                                'compute_loss': ssd_loss.compute_loss})
 
+quantize_scope = tfmot.quantization.keras.quantize_scope
+
+#with quantize_scope():
+#    quantized_model = tf.keras.models.load_model(q_model_path,custom_objects={'AnchorBoxes': AnchorBoxes,
+#                                               'compute_loss': ssd_loss.compute_loss})
 
 def inference_single_image():
     #Reading a dummy image
@@ -170,7 +178,8 @@ def inference_single_image():
 def inference_video():
     #Reading a dummy image
 
-    cap = cv2.VideoCapture('/home/mohan/git/backups/drive.mp4')
+    cap = cv2.VideoCapture('/home/mohan/git/backups/drive_1_min_more_cars.mp4')
+    #cap = cv2.VideoCapture('/home/mohan/git/backups/drive.mp4')
     prev_frame_time = 0
     new_frame_time = 0
 
