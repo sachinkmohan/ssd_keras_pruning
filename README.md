@@ -16,6 +16,8 @@
 	- `ssd7_30_ep_op13.onnx`
 	- `drive_1_min_more_cars.mp4`
 - Adding a conda environment file `ssd7_keras.yml` which is like `requirements.txt` in pip
+- Added `Inference_OD.py` file - You can inference using `.pb` file now.
+- Added `tf1_to_trt_converter_plus_inference.ipynb` file - Convert TF1 `.pb` files to TF-TRT `.pb` files
 ---
 
 ## Original README by the author @pierluigiferrari
